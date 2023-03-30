@@ -310,7 +310,7 @@ class Application:
                     start_x + self.cursor_x * 4,
                     cursor_param,
                 )[:3].upper()
-                if len(new_name) == 3 and new_name.isalpha():
+                if len(new_name) > 0 and new_name.isalnum():
                     old_index = params.index(cursor_param)
                     params[old_index] = new_name
                     param_values[new_name] = param_values.pop(cursor_param)
