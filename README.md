@@ -1,6 +1,6 @@
 # SliderWolf
 
-![sliderwolf](sliderfolf_picture.png)
+![sliderwolf](sliderwolf_picture.png)
 
 SliderWolf is a terminal-based application that allows users to edit MIDI parameters in a simple grid-like interface. It supports creating and switching between multiple banks, renaming parameters, and changing parameter values, MIDI channels, and control numbers.
 
