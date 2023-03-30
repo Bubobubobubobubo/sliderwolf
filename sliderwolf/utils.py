@@ -1,6 +1,7 @@
 from typing import Any
 
-__all__ = ('clamp',)
+__all__ = ("clamp",)
+
 
 def clamp(value: Any, min_value: Any, max_value: Any):
     """

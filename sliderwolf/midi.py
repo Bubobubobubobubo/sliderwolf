@@ -3,6 +3,7 @@ from .bank import Bank
 
 __all__ = ("MIDI",)
 
+
 class MIDI:
     """
     MIDI Interface for the application
@@ -35,7 +36,11 @@ class MIDI:
         """
         Get the name of the connected MIDI port
         """
-        return self.connected_port.name if self.connected_port else "No MIDI port connected"
+        return (
+            self.connected_port.name
+            if self.connected_port
+            else "No MIDI port connected"
+        )
 
     def get_available_ports(self):
         """
@@ -49,10 +54,11 @@ class MIDI:
         except (IOError, ValueError) as e:
             pass
 
-
     def send_control_message(self, channel, control, value):
         if self.connected_port is not None:
-            message = mido.Message("control_change", channel=channel, control=control, value=value)
+            message = mido.Message(
+                "control_change", channel=channel, control=control, value=value
+            )
             self.connected_port.send(message)
         else:
             print("No connected MIDI port. Cannot send control message.")
