@@ -214,7 +214,7 @@ class Application:
             if cursor_index < len(params):
                 cursor_param = params[cursor_index]
             if cursor_param is not None:
-                cursor_value = f"{param_values[cursor_param]: >3}"
+                cursor_value = f"{param_values.get(cursor_param, 0): >3}"
                 stdscr.addstr(
                     start_y + self.cursor_y,
                     start_x + self.cursor_x * 4,
@@ -222,10 +222,10 @@ class Application:
                     curses.A_REVERSE,
                 )
 
-                cursor_channel = self.banks[self.current_bank]["channels"][cursor_param]
+                cursor_channel = self.banks[self.current_bank]["channels"].get(cursor_param, 0)
                 cursor_control_number = self.banks[self.current_bank][
                     "control_numbers"
-                ][cursor_param]
+                ].get(cursor_param, 0)
                 stdscr.addstr(
                     start_y + 9,
                     start_x,
@@ -236,10 +236,10 @@ class Application:
                     midi_port = self.bank_manager.bank["preferred_midi_port"]
                 except KeyError:
                     pass  # TODO: FIX ME
-                cursor_channel = self.banks[self.current_bank]["channels"][cursor_param]
+                cursor_channel = self.banks[self.current_bank]["channels"].get(cursor_param, 0)
                 cursor_control_number = self.banks[self.current_bank][
                     "control_numbers"
-                ][cursor_param]
+                ].get(cursor_param, 0)
                 stdscr.addstr(
                     start_y + 9,
                     start_x,
@@ -376,7 +376,6 @@ class Application:
                 new_bank_name = self.get_param_value(
                     stdscr, start_y - 1, start_x + 6, ""
                 ).upper()
-
                 if new_bank_name.isalpha():
                     if new_bank_name not in self.banks:
                         # Initialize a new bank if it doesn't exist
@@ -396,7 +395,15 @@ class Application:
                             },
                         }
                     self.current_bank = new_bank_name
-
+                curses.curs_set(2)
+            elif key == ord("x"):  # Reset bank parameters, names, control numbers and channels
+                bank = self.banks[self.current_bank]
+                for i in range(len(bank["params"])):
+                    param = bank["params"][i]
+                    bank["values"][param] = 0
+                    bank["channels"][param] = 0
+                    bank["control_numbers"][param] = 0
+                    bank["params"][i] = f"P{i:02}"
                 curses.curs_set(2)
 
             # Handle terminal resize
