@@ -1,5 +1,7 @@
 # SliderWolf
 
+![sliderwolf](sliderfolf_picture.png)
+
 SliderWolf is a terminal-based application that allows users to edit MIDI parameters in a simple grid-like interface. It supports creating and switching between multiple banks, renaming parameters, and changing parameter values, MIDI channels, and control numbers.
 
 ## Features
@@ -49,6 +51,7 @@ Use the arrow keys to navigate the grid, and the following keys to perform actio
 - `n`: Edit the control number of the currently selected parameter
 - `c`: Edit the channel of the currently selected parameter
 - `b`: Switch to another bank or create a new one
+- `x`: Reset the current parameter bank
 - `q`: Quit the application
 
 When prompted to input values, type the desired value and press Enter. If you don't want to make changes, just press Enter without typing anything.
