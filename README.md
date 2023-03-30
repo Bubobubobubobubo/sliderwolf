@@ -56,10 +56,10 @@ Use the arrow keys to navigate the grid, and the following keys to perform actio
 
 When prompted to input values, type the desired value and press Enter. If you don't want to make changes, just press Enter without typing anything.
 
-# Contributing
+## Contributing
 
 If you would like to contribute to SliderWolf, feel free to fork the repository and submit a pull request with your changes. We're always open to improvements and new ideas.
 
-# License
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
