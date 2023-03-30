@@ -83,17 +83,16 @@ class Application():
             control_number: The control number of the parameter.
             value: The new value of the parameter.
         """
-        print(
-            f"Parameter {param_name} (Channel: {channel}, Control Number: {control_number}) changed to {value}"
-        )
+        # print(
+        #     f"Parameter {param_name} (Channel: {channel}, Control Number: {control_number}) changed to {value}"
+        # )
 
 
     def application_loop(self, stdscr: Any) -> None:
         # ...
         while True:
-            stdscr.clear()
+            stdscr.erase()
             curses.curs_set(1)
-    
             # Draw a box around the application area
             self.draw_box(stdscr)
     
@@ -157,12 +156,29 @@ class Application():
             elif key == ord("v"):  # Change value
                 curses.curs_set(0)
                 new_value = self.get_param_value(
-                    stdscr, start_y - 4 + self.cursor_y, start_x - 16 + self.cursor_x * 4, param_values[cursor_param]
+                    stdscr, start_y + self.cursor_y, start_x + self.cursor_x * 4, param_values[cursor_param]
                 )[:3]
-                new_value = clamp(int(new_value), 0, 127)
-                param_values[cursor_param] = new_value
+                try:
+                    new_value = clamp(int(new_value), 0, 127)
+                    param_values[cursor_param] = new_value
+                except ValueError:
+                    pass
                 self.on_parameter_change(
                     cursor_param, cursor_channel, cursor_control_number, new_value
+                )
+                curses.curs_set(2)
+            elif key == ord("+") or key == ord("="):  # Increment value
+                curses.curs_set(0)
+                param_values[cursor_param] = clamp(param_values[cursor_param] + 1, 0, 127)
+                self.on_parameter_change(
+                    cursor_param, cursor_channel, cursor_control_number, param_values[cursor_param]
+                )
+                curses.curs_set(2)
+            elif key == ord("-"):  # Decrement value
+                curses.curs_set(0)
+                param_values[cursor_param] = clamp(param_values[cursor_param] - 1, 0, 127)
+                self.on_parameter_change(
+                    cursor_param, cursor_channel, cursor_control_number, param_values[cursor_param]
                 )
                 curses.curs_set(2)
             elif key == ord("r"):  # Rename parameter
@@ -195,11 +211,14 @@ class Application():
             elif key == ord("c"):  # Enter channel
                 curses.curs_set(0)
                 new_channel = self.get_param_value(stdscr, start_y + 9, start_x + 9, str(cursor_channel))
-                new_channel = clamp(int(new_channel), 0, 15)
-                self.banks[self.current_bank]["channels"][cursor_param] = new_channel
+                try:
+                    new_channel = clamp(int(new_channel), 0, 15)
+                    self.banks[self.current_bank]["channels"][cursor_param] = new_channel
+                except ValueError:
+                    pass
                 curses.curs_set(2)
             elif key == ord("q"):  # Quit
-                stdscr.addstr(start_y + 7, start_x - 16, "Do you want to quit? (y/n): ")
+                stdscr.addstr(start_y + 10, start_x, "Do you want to quit? (y/n): ")
                 if stdscr.getch() == ord("y"):
                     exit()
             elif key == ord("b"):  # Switch bank
