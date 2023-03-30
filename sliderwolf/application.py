@@ -40,10 +40,12 @@ class Application():
         self.cursor_x = self.screen_width // 2 - 16
         self.cursor_y = self.screen_height // 2 - 4
 
+
+
     def draw_box(self, stdscr: Any) -> None:
         """
         Draw a box around the application area.
-
+    
         Args:
             stdscr: The curses standard screen object.
         """
@@ -85,37 +87,24 @@ class Application():
             f"Parameter {param_name} (Channel: {channel}, Control Number: {control_number}) changed to {value}"
         )
 
+
     def application_loop(self, stdscr: Any) -> None:
-        """
-        Main event loop for the Curses application. Draws the screen, updates information,
-        and handles user input. The mechanism will also be in charge of auto-saving application state
-        every now and then.
-    
-        Args:
-            stdscr: The curses standard screen object.
-        """
-        # Set up the screen
-        self.screen_setup(stdscr)
-    
-        # Set up color pairs
-        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-        curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
-    
+        # ...
         while True:
             stdscr.clear()
-            curses.curs_set(1)  # Make the cursor visible
+            curses.curs_set(1)
     
             # Draw a box around the application area
             self.draw_box(stdscr)
     
-            # Center the application in the terminal
-            center_y = self.screen_height // 2
-            center_x = self.screen_width // 2
-    
+            # Calculate the starting coordinates for drawing the grid
+            start_y = max((self.screen_height - 8) // 2, 1)
+            start_x = max((self.screen_width - 32) // 2, 1)
+            
             # Show current bank
             stdscr.attron(curses.color_pair(1))
             stdscr.attron(curses.A_BOLD)
-            stdscr.addstr(center_y - 5, center_x - 16, f"BANK: {self.current_bank}")
+            stdscr.addstr(start_y - 1, start_x, f"BANK: {self.current_bank}")
             stdscr.attroff(curses.A_BOLD)
             stdscr.attroff(curses.color_pair(1))
     
@@ -127,7 +116,7 @@ class Application():
                 for x in range(8):
                     index = y * 8 + x
                     param = params[index]
-                    stdscr.addstr(center_y - 4 + y, center_x - 16 + x * 4, param)
+                    stdscr.addstr(start_y + y, start_x + x * 4, param)
     
             # Draw the cursor
             cursor_index = self.cursor_y * 8 + self.cursor_x
@@ -136,16 +125,23 @@ class Application():
                 cursor_param = params[cursor_index]
             if cursor_param is not None:
                 cursor_value = f"{param_values[cursor_param]: >3}"
-                stdscr.addstr(center_y - 4 + self.cursor_y, center_x - 16 + self.cursor_x * 4, cursor_value, curses.A_REVERSE)
-    
-                cursor_channel = self.banks[self.current_bank]["channels"][cursor_param]
-                cursor_control_number = self.banks[self.current_bank]["control_numbers"][cursor_param]
                 stdscr.addstr(
-                    center_y + 5,
-                    center_x - 16,
+                    start_y + self.cursor_y,
+                    start_x + self.cursor_x * 4,
+                    cursor_value,
+                    curses.A_REVERSE,
+                )
+
+                cursor_channel = self.banks[self.current_bank]["channels"][cursor_param]
+                cursor_control_number = self.banks[self.current_bank]["control_numbers"][
+                    cursor_param
+                ]
+                stdscr.addstr(
+                    start_y + 9,
+                    start_x,
                     f"Channel: {cursor_channel} Control Number: {cursor_control_number}",
                 )
-    
+
             # Capture user input
             key = stdscr.getch()
 
@@ -161,7 +157,7 @@ class Application():
             elif key == ord("v"):  # Change value
                 curses.curs_set(0)
                 new_value = self.get_param_value(
-                    stdscr, center_y - 4 + self.cursor_y, center_x - 16 + self.cursor_x * 4, param_values[cursor_param]
+                    stdscr, start_y - 4 + self.cursor_y, start_x - 16 + self.cursor_x * 4, param_values[cursor_param]
                 )[:3]
                 new_value = clamp(int(new_value), 0, 127)
                 param_values[cursor_param] = new_value
@@ -172,7 +168,7 @@ class Application():
             elif key == ord("r"):  # Rename parameter
                 curses.curs_set(0)
                 new_name = self.get_param_value(
-                    stdscr, self.cursor_y + 1, self.cursor_x * 4, cursor_param
+                    stdscr, start_y + self.cursor_y, start_x + self.cursor_x * 4, cursor_param
                 )[:3].upper()
                 if len(new_name) == 3 and new_name.isalpha():
                     old_index = params.index(cursor_param)
@@ -189,7 +185,7 @@ class Application():
             elif key == ord("n"):  # Enter control number
                 curses.curs_set(0)
                 new_control_number = self.get_param_value(
-                    stdscr, center_y + 5, center_x + 4, str(cursor_control_number)
+                    stdscr, start_y + 9, start_x + 27, str(cursor_control_number)
                 )
                 new_control_number = clamp(int(new_control_number), 0, 127)
                 self.banks[self.current_bank]["control_numbers"][
@@ -198,19 +194,19 @@ class Application():
                 curses.curs_set(2)
             elif key == ord("c"):  # Enter channel
                 curses.curs_set(0)
-                new_channel = self.get_param_value(stdscr, 10, 9, str(cursor_channel))
+                new_channel = self.get_param_value(stdscr, start_y + 9, start_x + 9, str(cursor_channel))
                 new_channel = clamp(int(new_channel), 0, 15)
                 self.banks[self.current_bank]["channels"][cursor_param] = new_channel
                 curses.curs_set(2)
             elif key == ord("q"):  # Quit
-                stdscr.addstr(center_y + 7, center_x - 16, "Do you want to quit? (y/n): ")
+                stdscr.addstr(start_y + 7, start_x - 16, "Do you want to quit? (y/n): ")
                 if stdscr.getch() == ord("y"):
                     exit()
             elif key == ord("b"):  # Switch bank
                 # Get the new bank name from the user
                 curses.curs_set(0)
-                stdscr.addstr(center_y - 5, center_x - 16, " " * 10)
-                new_bank_name = self.get_param_value(stdscr, center_y - 5, center_x - 11, "").upper()
+                stdscr.addstr(start_y - 1, start_x + 5, " " * 10)
+                new_bank_name = self.get_param_value(stdscr, start_y - 1, start_x + 6, "").upper()
 
                 if new_bank_name.isalpha():
                     if new_bank_name not in self.banks:
