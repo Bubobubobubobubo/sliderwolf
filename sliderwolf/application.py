@@ -3,6 +3,7 @@ from .midi import MIDI
 from typing import Any
 from .bank import Bank
 import curses
+import sys
 
 __all__ = ("Application",)
 
@@ -23,6 +24,31 @@ class Application():
         self.cursor_y: int = 0
         self.screen_width: int = 0
         self.screen_height: int = 0
+
+        # Connect to the MIDI port
+        self.midi_interface = MIDI()
+
+        # Attempt to connect to the preferred MIDI port
+        preferred_midi_port = self.bank_manager.preferred_midi_port
+        if preferred_midi_port:
+            try:
+                self.midi_interface.connect_by_name(preferred_midi_port)
+            except Exception as e:
+                print(f"Failed to connect to the preferred MIDI port: {preferred_midi_port}")
+                print(str(e))
+        # If there is no preferred MIDI port, connect to the first available port
+        else:
+            ports = self.midi_interface.get_available_ports()
+            if ports:
+                try:
+                    self.midi_interface.connect_by_name(ports[0])
+                except Exception as e:
+                    print(f"Failed to connect to the first available MIDI port: {ports[0]}")
+                    print(str(e))
+            else:
+                print("No MIDI ports available")
+                sys.exit(1)
+
 
     def screen_setup(self, stdscr: Any) -> None:
         """
@@ -51,8 +77,9 @@ class Application():
         """
         stdscr.border(0)
 
+
     @classmethod
-    def get_param_value(cls, stdscr: Any, y: int, x: int, default_value) -> int:
+    def get_param_value(cls, stdscr: Any, y: int, x: int, default_value, midi_param: bool = False) -> int:
         """
         Get a parameter value from user input and update the screen accordingly.
     
@@ -67,13 +94,15 @@ class Application():
         """
         stdscr.move(y, x)
         curses.echo()
-        value = stdscr.getstr(y, x, 3).decode("utf-8")
+        if not midi_param:
+            value = stdscr.getstr(y, x, 3).decode("utf-8")
+        else:
+            value = stdscr.getstr(y, x, 40).decode("utf-8")
         curses.noecho()
         return value or default_value
 
 
-    @classmethod
-    def on_parameter_change(cls, param_name: str, channel: int, control_number: int, value: int) -> None:
+    def on_parameter_change(self, param_name: str, channel: int, control_number: int, value: int) -> None:
         """
         Display the updated parameter information in the terminal.
     
@@ -83,13 +112,12 @@ class Application():
             control_number: The control number of the parameter.
             value: The new value of the parameter.
         """
-        # print(
-        #     f"Parameter {param_name} (Channel: {channel}, Control Number: {control_number}) changed to {value}"
-        # )
+        self.midi_interface.send_control_message(channel, control_number, value)
 
 
     def application_loop(self, stdscr: Any) -> None:
         # ...
+
         while True:
             stdscr.erase()
             curses.curs_set(1)
@@ -99,6 +127,9 @@ class Application():
             # Calculate the starting coordinates for drawing the grid
             start_y = max((self.screen_height - 8) // 2, 1)
             start_x = max((self.screen_width - 32) // 2, 1)
+
+            midi_port = self.midi_interface.get_connected_port_name()
+            stdscr.addstr( start_y + 10, start_x, f"MIDI Port: {midi_port}",)
             
             # Show current bank
             stdscr.attron(curses.color_pair(1))
@@ -140,6 +171,22 @@ class Application():
                     start_x,
                     f"Channel: {cursor_channel} Control Number: {cursor_control_number}",
                 )
+
+                try:
+                    midi_port = self.bank_manager.bank["preferred_midi_port"]
+                except KeyError:
+                    pass # TODO: FIX ME
+                cursor_channel = self.banks[self.current_bank]["channels"][cursor_param]
+                cursor_control_number = self.banks[self.current_bank]["control_numbers"][
+                    cursor_param
+                ]
+                stdscr.addstr(
+                    start_y + 9,
+                    start_x,
+                    f"Channel: {cursor_channel} Control Number: {cursor_control_number}",
+                )
+
+
 
             # Capture user input
             key = stdscr.getch()
@@ -218,8 +265,15 @@ class Application():
                 except ValueError:
                     pass
                 curses.curs_set(2)
+            elif key == ord("m"):  # Enter MIDI port
+                curses.curs_set(0)
+                stdscr.addstr(start_y + 10, start_x + 11, " " * len(self.midi_interface.get_connected_port_name()))
+                new_midi_port = self.get_param_value(stdscr, start_y + 10, start_x + 12, str(cursor_channel), midi_param=True)
+                self.midi_interface.connect_by_user_input(new_midi_port)
+                curses.curs_set(2)
+
             elif key == ord("q"):  # Quit
-                stdscr.addstr(start_y + 10, start_x, "Do you want to quit? (y/n): ")
+                stdscr.addstr(start_y + 11, start_x, "Do you want to quit? (y/n): ")
                 if stdscr.getch() == ord("y"):
                     exit()
             elif key == ord("b"):  # Switch bank
