@@ -155,6 +155,7 @@ class Application():
                 self.cursor_x += 1
             elif key == ord("v"):  # Change value
                 curses.curs_set(0)
+                stdscr.addstr(start_y + self.cursor_y, start_x + self.cursor_x * 4, "   ")
                 new_value = self.get_param_value(
                     stdscr, start_y + self.cursor_y, start_x + self.cursor_x * 4, param_values[cursor_param]
                 )[:3]
