@@ -169,6 +169,7 @@ class Application:
         - 'n': Enter a new MIDI control number for the currently selected parameter.
         - 'c': Enter a new MIDI channel for the currently selected parameter.
         - 'm': Change the MIDI port being used by the application.
+        - 'x': Resets the entire bank.
         - 'q': Quit the application.
 
         The method also handles resizing of the terminal window, saves the current bank of parameter values periodically, and refreshes the screen to display any updates.
@@ -267,7 +268,7 @@ class Application:
                     stdscr,
                     start_y + self.cursor_y,
                     start_x + self.cursor_x * 4,
-                    param_values[cursor_param],
+                    param_values.get(cursor_param, 0),
                 )[:3]
                 try:
                     new_value = clamp(int(new_value), 0, 127)
@@ -313,7 +314,8 @@ class Application:
                 if len(new_name) > 0 and new_name.isalnum():
                     old_index = params.index(cursor_param)
                     params[old_index] = new_name
-                    param_values[new_name] = param_values.pop(cursor_param)
+                    if cursor_param in param_values:
+                        param_values[new_name] = param_values.pop(cursor_param)
                     self.banks[self.current_bank]["channels"][new_name] = self.banks[
                         self.current_bank
                     ]["channels"].pop(cursor_param)
