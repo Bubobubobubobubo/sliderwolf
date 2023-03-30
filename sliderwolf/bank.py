@@ -40,7 +40,7 @@ class Bank:
             return {
                 "preferred_midi_port": None,
                 "banks": {
-                    "default": {
+                    "XXX": {
                         "params": [f"P{index:02}" for index in range(64)],
                         "values": {
                             param: 0

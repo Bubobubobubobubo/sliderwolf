@@ -38,7 +38,7 @@ class Application:
     def __init__(self) -> None:
         self.bank_manager = Bank()
         self.banks = self.bank_manager.bank
-        self.current_bank = "default"
+        self.current_bank = "XXX"
         self.cursor_x: int = 0
         self.cursor_y: int = 0
         self.screen_width: int = 0
@@ -362,8 +362,9 @@ class Application:
                     midi_param=True,
                 )
                 self.midi_interface.connect_by_user_input(new_midi_port)
+                self.bank_manager.preferred_midi_port = new_midi_port # <-- Add this line to update the preferred MIDI port
+                self.bank_manager.save_banks()
                 curses.curs_set(2)
-
             elif key == ord("q"):  # Quit
                 stdscr.addstr(start_y + 11, start_x, "Do you want to quit? (y/n): ")
                 if stdscr.getch() == ord("y"):
