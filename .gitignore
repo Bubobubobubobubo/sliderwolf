@@ -1,0 +1,49 @@
+# Compiled object files and executables
+*.o
+*.a
+*.exe
+*.out
+*.so
+*.dylib
+
+# Folders
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Local development configuration files
+*.env
+*.log
+*.env.local
+*.env.*.local
+.envrc
+
+# IDE files
+.vscode/
+*.code-workspace
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Windows Thumbs.db files
+Thumbs.db
+
+# Vim files
+*.swp
+*~
+*.swo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# PyCharm files
+.idea/
+*.iml
+*.ipr
+*.iws
