@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=67.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sliderwolf"
+version = "0.1.0"
+description = "A terminal-based MIDI Parameter Editor for editing MIDI parameters in a simple grid-like interface."
+authors = [{name = "Raphaël Maurice Forment", email = "raphael.forment@gmail.com"}]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.7"
+homepage = "https://github.com/Bubobubobubobubo/sliderwolf"
+repository = "https://github.com/Bubobubobubobubo/sliderwolf"
+keywords = ["controller", "midi", "music", "tui"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Multimedia :: Sound/Audio :: MIDI",
+]
+
+# Requirements: This is done differently by poetry!
+dependencies = [
+    "mido>=1.2",
+]
+
+[project.urls]
+"Source Code" = "https://github.com/Bubobubobubobubo/sliderwolf"
+"Bug Tracker" = "https://github.com/Bubobubobubobubo/sliderwolf"
+
+
+[tool.black]
+target_version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+

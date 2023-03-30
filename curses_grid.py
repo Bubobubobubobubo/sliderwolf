@@ -74,7 +74,7 @@ def main(stdscr):
     application_loop: int = 0
 
     # Load banks from file
-    current_bank = "dadou"
+    current_bank = "default"
     banks = load_banks(bank_location=BANKS_FILE_PATH)
 
     # Set up the screen
@@ -172,7 +172,7 @@ def main(stdscr):
             stdscr.addstr("\nDo you want to quit? (y/n): ")
             if stdscr.getch() == ord('y'):
                 exit()
-         elif key == ord('b'):  # Switch bank
+        elif key == ord('b'):  # Switch bank
             # Get the new bank name from the user
             curses.curs_set(0)
             stdscr.nodelay(0)
