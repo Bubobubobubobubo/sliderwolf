@@ -282,7 +282,7 @@ class Application:
             elif key == ord("+") or key == ord("="):  # Increment value
                 curses.curs_set(0)
                 param_values[cursor_param] = clamp(
-                    param_values[cursor_param] + 1, 0, 127
+                    param_values.get(cursor_param, 0) + 1, 0, 127
                 )
                 self.on_parameter_change(
                     cursor_param,
@@ -294,7 +294,7 @@ class Application:
             elif key == ord("-"):  # Decrement value
                 curses.curs_set(0)
                 param_values[cursor_param] = clamp(
-                    param_values[cursor_param] - 1, 0, 127
+                    param_values.get(cursor_param, 0) - 1, 0, 127
                 )
                 self.on_parameter_change(
                     cursor_param,
@@ -316,13 +316,14 @@ class Application:
                     params[old_index] = new_name
                     if cursor_param in param_values:
                         param_values[new_name] = param_values.pop(cursor_param)
+
                     self.banks[self.current_bank]["channels"][new_name] = self.banks[
                         self.current_bank
-                    ]["channels"].pop(cursor_param)
+                    ]["channels"].pop(cursor_param, 0)
                     self.banks[self.current_bank]["control_numbers"][
                         new_name
                     ] = self.banks[self.current_bank]["control_numbers"].pop(
-                        cursor_param
+                        cursor_param, 0
                     )
                     cursor_param = new_name
                 curses.curs_set(2)
