@@ -198,7 +198,7 @@ class Application:
             # Show current bank
             stdscr.attron(curses.color_pair(1))
             stdscr.attron(curses.A_BOLD)
-            stdscr.addstr(start_y - 1, start_x, f"BANK: {self.current_bank}")
+            stdscr.addstr(start_y - 1, start_x, f"BANK: {self.current_bank}", curses.A_STANDOUT)
             stdscr.attroff(curses.A_BOLD)
             stdscr.attroff(curses.color_pair(1))
 
