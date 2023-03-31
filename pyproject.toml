@@ -1,17 +1,13 @@
 [build-system]
 requires = ["setuptools>=67.6.0"]
-build-backend = "setuptools.build_meta"
 
 [project]
 name = "sliderwolf"
 version = "0.1.0"
 description = "A terminal-based MIDI Parameter Editor for editing MIDI parameters in a simple grid-like interface."
 authors = [{name = "Raphaël Maurice Forment", email = "raphael.forment@gmail.com"}]
-license = "MIT"
 readme = "README.md"
 requires-python = ">=3.7"
-homepage = "https://github.com/Bubobubobubobubo/sliderwolf"
-repository = "https://github.com/Bubobubobubobubo/sliderwolf"
 keywords = ["controller", "midi", "music", "tui"]
 classifiers = [
     "Development Status :: 3 - Alpha",
