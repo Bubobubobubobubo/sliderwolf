@@ -174,9 +174,12 @@ class Application:
 
         The method also handles resizing of the terminal window, saves the current bank of parameter values periodically, and refreshes the screen to display any updates.
         """
+        curses.start_color()
+        curses.use_default_colors()
 
         while True:
             stdscr.erase()
+
             curses.curs_set(1)
             # Draw a box around the application area
             self.draw_box(stdscr)
