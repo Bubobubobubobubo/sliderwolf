@@ -267,20 +267,20 @@ class Application:
                 stdscr.addstr(
                     start_y + self.cursor_y, start_x + self.cursor_x * 4, "   "
                 )
-                new_value = self.get_param_value(
-                    stdscr,
-                    start_y + self.cursor_y,
-                    start_x + self.cursor_x * 4,
-                    param_values.get(cursor_param, 0),
-                )[:3]
                 try:
+                    new_value = self.get_param_value(
+                        stdscr,
+                        start_y + self.cursor_y,
+                        start_x + self.cursor_x * 4,
+                        param_values.get(cursor_param, 0),
+                    )[:3]
                     new_value = clamp(int(new_value), 0, 127)
                     param_values[cursor_param] = new_value
+                    self.on_parameter_change(
+                        cursor_param, cursor_channel, cursor_control_number, new_value
+                    )
                 except ValueError:
                     pass
-                self.on_parameter_change(
-                    cursor_param, cursor_channel, cursor_control_number, new_value
-                )
                 curses.curs_set(2)
             elif key == ord("+") or key == ord("="):  # Increment value
                 curses.curs_set(0)
