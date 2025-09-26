@@ -9,6 +9,8 @@ from .presentation.controllers import UIController
 
 
 class SliderWolfApp:
+    """Main application class that coordinates all components."""
+
     def __init__(self) -> None:
         # Infrastructure
         self._bank_repository = FileBankRepository()
@@ -68,7 +70,7 @@ class SliderWolfApp:
             show_help=True,
             show_cursor_value=False,
             show_all_values=False,
-            flip_interval=2.0,
+            flip_interval=1.0,
         )
 
     def _setup_midi_connection(self, state: AppState) -> None:
@@ -93,6 +95,7 @@ class SliderWolfApp:
 
 
 def main() -> None:
+    """Application entry point."""
     app = SliderWolfApp()
     app.run()
 

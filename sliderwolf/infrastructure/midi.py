@@ -5,6 +5,8 @@ from ..domain.models import MIDIMessage
 
 
 class RTMIDIPort(MIDIPort):
+    """MIDI port implementation using python-rtmidi via mido."""
+
     def __init__(self) -> None:
         self._connected_port: mido.ports.IOPort | None = None
 

@@ -11,6 +11,8 @@ from ..domain.models import Bank, MIDIChannel, Parameter
 
 
 class FileBankRepository(BankRepository):
+    """File-based repository for storing and loading parameter banks."""
+
     def __init__(self, file_path: str | None = None):
         if file_path is None:
             self._file_path = (

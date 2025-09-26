@@ -7,6 +7,8 @@ from ..domain.models import Bank
 
 
 class CursesRenderer(Renderer):
+    """Terminal-based UI renderer using curses library."""
+
     def __init__(self) -> None:
         self._stdscr: Any = None
         self._screen_width = 0

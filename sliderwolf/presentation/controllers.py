@@ -7,6 +7,8 @@ from ..domain.models import AppState, Bank
 
 
 class InputHandler:
+    """Handles keyboard input and navigation for the grid interface."""
+
     def __init__(self) -> None:
         self.GRID_SIZE = 8
 
@@ -51,6 +53,8 @@ class InputHandler:
 
 
 class UIController:
+    """Main controller coordinating UI rendering, input handling, and business logic."""
+
     def __init__(
         self,
         renderer: Renderer,
@@ -67,7 +71,7 @@ class UIController:
         self._pending_save: dict[str, Bank] | None = None
         self._save_timer: threading.Timer | None = None
         self._save_lock = threading.Lock()
-        self._save_delay = 1.0  # seconds
+        self._save_delay = 1.0
 
     def initialize(self) -> None:
         self._renderer.initialize()
