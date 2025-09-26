@@ -33,6 +33,25 @@ class CursesRenderer(Renderer):
             curses.endwin()
             self._stdscr = None
 
+    def _update_screen_dimensions(self) -> None:
+        """Update screen dimensions - call this before each render"""
+        if self._stdscr:
+            self._screen_height, self._screen_width = self._stdscr.getmaxyx()
+
+    def _get_centered_position(self) -> tuple[int, int]:
+        """Calculate centered position for the main interface"""
+        self._update_screen_dimensions()
+
+        # Interface dimensions: 8x8 grid with 4 chars per cell = 32 width
+        # Height needs space for grid (8) + bank name (1) + parameter info (1) + midi port (1) + margin = ~12
+        interface_width = 32
+        interface_height = 12
+
+        start_y = max((self._screen_height - interface_height) // 2, 1)
+        start_x = max((self._screen_width - interface_width) // 2, 1)
+
+        return start_y, start_x
+
     def render_grid(self, bank: Bank, cursor_x: int, cursor_y: int, show_all_values: bool = False, show_cursor_value: bool = False) -> None:
         if not self._stdscr:
             return
@@ -40,8 +59,7 @@ class CursesRenderer(Renderer):
         self._stdscr.erase()
         self._stdscr.border(0)
 
-        start_y = max((self._screen_height - 8) // 2, 1)
-        start_x = max((self._screen_width - 32) // 2, 1)
+        start_y, start_x = self._get_centered_position()
 
         # Draw grid
         for y in range(8):
@@ -88,8 +106,7 @@ class CursesRenderer(Renderer):
         if not self._stdscr:
             return
 
-        start_y = max((self._screen_height - 8) // 2, 1)
-        start_x = max((self._screen_width - 32) // 2, 1)
+        start_y, start_x = self._get_centered_position()
 
         # Bank name
         try:
@@ -112,6 +129,8 @@ class CursesRenderer(Renderer):
     def render_help(self, show_help: bool) -> None:
         if not self._stdscr or not show_help:
             return
+
+        self._update_screen_dimensions()  # Ensure we have current dimensions
 
         help_lines = [
             "Keys: ↑↓←→:Navigate  v:Value  +/-:Inc/Dec  r:Rename  c:Channel  n:Control#",
@@ -141,8 +160,7 @@ class CursesRenderer(Renderer):
         if not self._stdscr:
             return ""
 
-        start_y = max((self._screen_height - 8) // 2, 1)
-        start_x = max((self._screen_width - 32) // 2, 1)
+        start_y, start_x = self._get_centered_position()
 
         # Save current state and set to blocking mode for prompt
         self._stdscr.timeout(-1)  # Set to blocking (no timeout)
