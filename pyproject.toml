@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools>=67.6.0"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sliderwolf"
@@ -7,7 +8,7 @@ version = "0.1.0"
 description = "A terminal-based MIDI Parameter Editor for editing MIDI parameters in a simple grid-like interface."
 authors = [{name = "Raphaël Maurice Forment", email = "raphael.forment@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 keywords = ["controller", "midi", "music", "tui"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -15,21 +16,22 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Sound/Audio :: MIDI",
 ]
 
-# Requirements: This is done differently by poetry!
 dependencies = [
     "mido>=1.2",
+    "python-rtmidi>=1.5.8",
 ]
 
 [project.urls]
 "Source Code" = "https://github.com/Bubobubobubobubo/sliderwolf"
 "Bug Tracker" = "https://github.com/Bubobubobubobubo/sliderwolf"
 
+[tool.uv]
+dev-dependencies = []
 
 [tool.black]
 target_version = ['py311']
@@ -50,4 +52,3 @@ exclude = '''
   )/
 )
 '''
-

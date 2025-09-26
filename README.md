@@ -30,7 +30,7 @@ source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 Install the required dependencies:
 
 ```shell
-python -m pip install .
+uv sync
 ```
 
 # Usage
@@ -39,7 +39,7 @@ python -m pip install .
 To run the program, execute the following command from the root directory of the repository:
 
 ```shell
-python -m sliderwolf
+uv run python -m sliderwolf
 ```
 
 Use the arrow keys to navigate the grid, and the following keys to perform actions:
