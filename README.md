@@ -13,33 +13,53 @@ SliderWolf is a terminal-based application that allows users to edit MIDI parame
 
 ## Installation
 
-- To install the MIDI Parameter Editor, first ensure you have Python 3.7 or newer installed on your system. Then, clone this repository to your local machine:
+SliderWolf requires Python 3.12 or newer. Choose one of the installation methods below:
+
+### Method 1: Install from Source (Recommended)
 
 ```shell
 git clone https://github.com/Bubobubobubobubo/sliderwolf
 cd sliderwolf
-```
-
-- (Optional) Create and activate a virtual environment:
-
-```shell
-python3 -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-```
-
-Install the required dependencies:
-
-```shell
 uv sync
+uv pip install -e .
 ```
 
-# Usage
-
-
-To run the program, execute the following command from the root directory of the repository:
+After installation, you can run SliderWolf from anywhere:
 
 ```shell
+sliderwolf  # or use the short alias: swolf
+```
+
+### Method 2: Development Setup
+
+For development or if you prefer running directly:
+
+```shell
+git clone https://github.com/Bubobubobubobubo/sliderwolf
+cd sliderwolf
+uv sync
 uv run python -m sliderwolf
+```
+
+### Method 3: Direct Installation with pip
+
+If you don't have `uv` installed:
+
+```shell
+git clone https://github.com/Bubobubobubobubo/sliderwolf
+cd sliderwolf
+pip install -e .
+sliderwolf
+```
+
+## Usage
+
+Once installed, simply run:
+
+```shell
+sliderwolf  # Full command
+# or
+swolf       # Short alias
 ```
 
 Use the arrow keys to navigate the grid, and the following keys to perform actions:

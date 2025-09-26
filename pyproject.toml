@@ -30,6 +30,10 @@ dependencies = [
 "Source Code" = "https://github.com/Bubobubobubobubo/sliderwolf"
 "Bug Tracker" = "https://github.com/Bubobubobubobubo/sliderwolf"
 
+[project.scripts]
+sliderwolf = "sliderwolf.app:main"
+swolf = "sliderwolf.app:main"
+
 [tool.uv]
 dev-dependencies = []
 
