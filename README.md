@@ -2,14 +2,13 @@
 
 ![sliderwolf](sliderwolf_picture.png)
 
-SliderWolf is a terminal-based application that allows users to edit MIDI parameters in a simple grid-like interface. It supports creating and switching between multiple banks, renaming parameters, and changing parameter values, MIDI channels, and control numbers.
+SliderWolf is a TUI application that allows users to control MIDI parameter  banks using a simple grid like interface. It is a keyboard-centric application meant to be used along with other music creation tools. It is heavily inspired by a very popular hardware MIDI controller device that I cannot afford. It supports creating and switching between multiple banks, renaming parameters, and changing parameter values, MIDI channels, and control numbers. Banks are persistent, and their state is saved across sessions.
 
 ## Features
-- Terminal-based interface for quick and efficient editing
-- 8x8 grid layout for easy parameter visualization and navigation
-- Support for multiple banks with custom parameter names
+- TUI interface for quick and efficient editing of MIDI parameter banks
+- Grid layout for parameter visualization and navigation (looks fancy)
 - Edit parameter values, MIDI channels, and control numbers
-- Auto-saving of application state
+- Auto-save application state and persistent storage between sessions
 
 ## Installation
 
@@ -28,6 +27,12 @@ After installation, you can run SliderWolf from anywhere:
 
 ```shell
 sliderwolf  # or use the short alias: swolf
+```
+
+Alternatively, you can run the `uv` command:
+
+```shell
+uv run python -m sliderwolf
 ```
 
 ### Method 2: Development Setup
@@ -75,6 +80,32 @@ Use the arrow keys to navigate the grid, and the following keys to perform actio
 - `q`: Quit the application
 
 When prompted to input values, type the desired value and press Enter. If you don't want to make changes, just press Enter without typing anything.
+
+## Architecture
+
+SliderWolf follows a clean architecture pattern with clear separation of concerns:
+
+```
+sliderwolf/
+├── app.py                   # Main entry point
+├── domain/                  # Core logic
+│   ├── models.py            # Parameter, Bank, MIDIMessage, AppState
+│   └── interfaces.py        # Abstract interfaces for ports
+├── application/             # Use cases and operations
+│   └── services.py          # BankService, MIDIService, ParameterService
+├── infrastructure/          # External concerns (I/O, persistence)
+│   ├── storage.py           # File-based bank repository
+│   ├── midi.py              # MIDI port implementation
+│   └── ui.py                # Terminal UI renderer
+└── presentation/            # User interface and input handling
+    └── controllers.py       # Main UI controller and input handler
+```
+
+The architecture ensures:
+- **Domain layer** contains pure logic with no external dependencies
+- **Application layer** orchestrates use cases and coordinates between layers
+- **Infrastructure layer** handles external systems (files, MIDI, terminal)
+- **Presentation layer** manages user interaction and display logic
 
 ## Contributing
 
