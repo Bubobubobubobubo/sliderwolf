@@ -1,5 +1,7 @@
 import json
 import os
+import tempfile
+import shutil
 from typing import Dict, Optional
 from ..domain.interfaces import BankRepository
 from ..domain.models import Bank, Parameter, MIDIChannel
@@ -13,6 +15,7 @@ class FileBankRepository(BankRepository):
             )
         else:
             self._file_path = file_path
+        self._last_saved_data = None
 
     def load_banks(self) -> Dict[str, Bank]:
         data = self._load_data()
@@ -50,7 +53,10 @@ class FileBankRepository(BankRepository):
                 "control_numbers": {param.name: param.control_number for param in bank.parameters}
             }
 
-        self._save_data(data)
+        # Only save if data actually changed
+        if data != self._last_saved_data:
+            self._save_data(data)
+            self._last_saved_data = data
 
     def get_preferred_midi_port(self) -> Optional[str]:
         data = self._load_data()
@@ -65,17 +71,42 @@ class FileBankRepository(BankRepository):
         if os.path.exists(self._file_path):
             try:
                 with open(self._file_path, "r") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    self._last_saved_data = data
+                    return data
             except (json.JSONDecodeError, IOError) as e:
                 print(f"Error loading banks from {self._file_path}: {e}")
 
-        return self._get_default_data()
+        data = self._get_default_data()
+        self._last_saved_data = data
+        return data
 
     def _save_data(self, data: dict) -> None:
         try:
             os.makedirs(os.path.dirname(self._file_path), exist_ok=True)
-            with open(self._file_path, "w") as f:
-                json.dump(data, f, indent=2)
+
+            # Atomic write using temporary file
+            temp_fd, temp_path = tempfile.mkstemp(
+                suffix='.tmp',
+                dir=os.path.dirname(self._file_path),
+                prefix='banks_'
+            )
+
+            try:
+                with os.fdopen(temp_fd, 'w') as f:
+                    json.dump(data, f, indent=2)
+
+                # Atomic move
+                shutil.move(temp_path, self._file_path)
+
+            except Exception:
+                # Clean up temp file on failure
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
+                raise
+
         except (OSError, IOError) as e:
             print(f"Warning: Failed to save banks to {self._file_path}: {str(e)}")
 

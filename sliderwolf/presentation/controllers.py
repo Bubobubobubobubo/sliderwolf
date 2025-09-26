@@ -1,4 +1,6 @@
 import curses
+import threading
+import time
 from typing import Optional
 from ..domain.models import AppState
 from ..domain.interfaces import Renderer
@@ -61,6 +63,10 @@ class UIController:
         self._midi_service = midi_service
         self._input_handler = InputHandler()
         self._running = True
+        self._pending_save = None
+        self._save_timer = None
+        self._save_lock = threading.Lock()
+        self._save_delay = 1.0  # seconds
 
     def initialize(self) -> None:
         self._renderer.initialize()
@@ -83,12 +89,16 @@ class UIController:
                 # Use timeout for input to allow periodic display updates
                 key = self._renderer.get_input()
                 if key != -1:  # Only process if we got actual input
-                    current_state = self._handle_input(key, current_state)
+                    new_state = self._handle_input(key, current_state)
 
-                    # Save after each operation
-                    self._bank_service.save_banks(current_state.banks)
+                    # Only save if banks actually changed
+                    if new_state.banks != current_state.banks:
+                        self._schedule_save(new_state.banks)
+
+                    current_state = new_state
 
         finally:
+            self._flush_pending_save()
             self.cleanup()
 
     def _render_ui(self, state: AppState) -> None:
@@ -243,3 +253,33 @@ class UIController:
         confirm = self._renderer.prompt_input("Quit? (y/n): ", 1)
         if confirm.lower() == "y":
             self._running = False
+
+    def _schedule_save(self, banks) -> None:
+        """Schedule a debounced save operation"""
+        with self._save_lock:
+            self._pending_save = banks
+
+            if self._save_timer:
+                self._save_timer.cancel()
+
+            self._save_timer = threading.Timer(self._save_delay, self._perform_save)
+            self._save_timer.start()
+
+    def _perform_save(self) -> None:
+        """Perform the actual save operation"""
+        with self._save_lock:
+            if self._pending_save is not None:
+                self._bank_service.save_banks(self._pending_save)
+                self._pending_save = None
+                self._save_timer = None
+
+    def _flush_pending_save(self) -> None:
+        """Force immediate save of pending changes"""
+        with self._save_lock:
+            if self._save_timer:
+                self._save_timer.cancel()
+                self._save_timer = None
+
+            if self._pending_save is not None:
+                self._bank_service.save_banks(self._pending_save)
+                self._pending_save = None

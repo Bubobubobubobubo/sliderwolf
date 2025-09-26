@@ -13,6 +13,7 @@ dist/
 build/
 
 # Local development configuration files
+.claude
 *.env
 *.log
 *.env.local

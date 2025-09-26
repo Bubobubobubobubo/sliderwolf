@@ -97,7 +97,7 @@ class AppState:
     last_flip_time: float = field(default_factory=time.time)
     show_cursor_value: bool = False  # Whether cursor position shows value (flips every 2s)
     show_all_values: bool = False    # Whether all positions show values (key press)
-    flip_interval: float = 2.0       # seconds
+    flip_interval: float = 1.0       # seconds
 
     def __post_init__(self):
         if not self.banks:
