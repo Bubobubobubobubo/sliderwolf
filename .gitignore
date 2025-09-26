@@ -1,50 +1,144 @@
-# Compiled object files and executables
-*.o
-*.a
-*.exe
-*.out
-*.so
-*.dylib
-
-# Folders
+# Python
 __pycache__/
-*.egg-info/
-dist/
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Local development configuration files
-.claude
-*.env
-*.log
-*.env.local
-*.env.*.local
-.envrc
+# PyInstaller
+*.manifest
+*.spec
 
-# IDE files
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+.idea/
+
+# VS Code
 .vscode/
-*.code-workspace
 
-# macOS files
+# uv
+.uv/
+
+# ruff
+.ruff_cache/
+
+# pre-commit
+.pre-commit-config.yaml.bak
+
+# OS
 .DS_Store
-.AppleDouble
-.LSOverride
-
-# Thumbnails
+.DS_Store?
 ._*
-
-# Windows Thumbs.db files
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Vim files
-*.swp
+# Editor backups
 *~
+*.swp
 *.swo
+*#
+.#*
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# PyCharm files
-.idea/
-*.iml
-*.ipr
-*.iws
+# Application specific
+*.log
