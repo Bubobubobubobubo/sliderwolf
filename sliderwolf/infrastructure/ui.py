@@ -19,7 +19,7 @@ class CursesRenderer(Renderer):
             return
 
         self._stdscr = curses.initscr()
-        curses.curs_set(2)
+        curses.curs_set(0)
         self._stdscr.timeout(100)  # 100ms timeout for periodic updates
         curses.start_color()
         curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLUE)
@@ -181,7 +181,7 @@ class CursesRenderer(Renderer):
         # Save current state and set to blocking mode for prompt
         self._stdscr.timeout(-1)  # Set to blocking (no timeout)
         curses.echo()
-        curses.curs_set(1)
+        curses.curs_set(0)
 
         try:
             self._stdscr.addstr(start_y + 11, start_x, prompt)
@@ -195,7 +195,7 @@ class CursesRenderer(Renderer):
         finally:
             # Restore original state
             curses.noecho()
-            curses.curs_set(2)
+            curses.curs_set(0)
             self._stdscr.timeout(100)  # Restore 100ms timeout for main loop
 
         return input_str
