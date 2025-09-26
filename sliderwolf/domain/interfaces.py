@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+
 from .models import Bank, MIDIMessage
 
 
 class BankRepository(ABC):
     @abstractmethod
-    def load_banks(self) -> Dict[str, Bank]:
+    def load_banks(self) -> dict[str, Bank]:
         pass
 
     @abstractmethod
-    def save_banks(self, banks: Dict[str, Bank]) -> None:
+    def save_banks(self, banks: dict[str, Bank]) -> None:
         pass
 
     @abstractmethod
-    def get_preferred_midi_port(self) -> Optional[str]:
+    def get_preferred_midi_port(self) -> str | None:
         pass
 
     @abstractmethod
@@ -35,7 +35,7 @@ class MIDIPort(ABC):
         pass
 
     @abstractmethod
-    def get_available_ports(self) -> List[str]:
+    def get_available_ports(self) -> list[str]:
         pass
 
     @abstractmethod
@@ -57,7 +57,14 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
-    def render_grid(self, bank: Bank, cursor_x: int, cursor_y: int, show_all_values: bool = False, show_cursor_value: bool = False) -> None:
+    def render_grid(
+        self,
+        bank: Bank,
+        cursor_x: int,
+        cursor_y: int,
+        show_all_values: bool = False,
+        show_cursor_value: bool = False,
+    ) -> None:
         pass
 
     @abstractmethod

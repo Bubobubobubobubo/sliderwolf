@@ -1,11 +1,13 @@
+import contextlib
 import curses
 from typing import Any
+
 from ..domain.interfaces import Renderer
 from ..domain.models import Bank
 
 
 class CursesRenderer(Renderer):
-    def __init__(self):
+    def __init__(self) -> None:
         self._stdscr: Any = None
         self._screen_width = 0
         self._screen_height = 0
@@ -52,7 +54,14 @@ class CursesRenderer(Renderer):
 
         return start_y, start_x
 
-    def render_grid(self, bank: Bank, cursor_x: int, cursor_y: int, show_all_values: bool = False, show_cursor_value: bool = False) -> None:
+    def render_grid(
+        self,
+        bank: Bank,
+        cursor_x: int,
+        cursor_y: int,
+        show_all_values: bool = False,
+        show_cursor_value: bool = False,
+    ) -> None:
         if not self._stdscr:
             return
 
@@ -69,7 +78,7 @@ class CursesRenderer(Renderer):
                     param = bank.parameters[index]
 
                     # Determine what to display: name or value
-                    is_cursor_position = (y == cursor_y and x == cursor_x)
+                    is_cursor_position = y == cursor_y and x == cursor_x
 
                     if show_all_values:
                         # Show all values when key is pressed
@@ -83,9 +92,16 @@ class CursesRenderer(Renderer):
 
                     try:
                         if is_cursor_position:
-                            self._stdscr.addstr(start_y + y, start_x + x * 4, display_text, curses.A_REVERSE)
+                            self._stdscr.addstr(
+                                start_y + y,
+                                start_x + x * 4,
+                                display_text,
+                                curses.A_REVERSE,
+                            )
                         else:
-                            self._stdscr.addstr(start_y + y, start_x + x * 4, display_text)
+                            self._stdscr.addstr(
+                                start_y + y, start_x + x * 4, display_text
+                            )
                     except curses.error:
                         # Ignore if we can't draw (terminal too small or encoding issues)
                         pass
@@ -94,11 +110,11 @@ class CursesRenderer(Renderer):
         cursor_index = cursor_y * 8 + cursor_x
         if cursor_index < len(bank.parameters):
             param = bank.parameters[cursor_index]
-            info_text = f"Channel: {param.channel.value} Control Number: {param.control_number}"
-            try:
+            info_text = (
+                f"Channel: {param.channel.value} Control Number: {param.control_number}"
+            )
+            with contextlib.suppress(curses.error):
                 self._stdscr.addstr(start_y + 9, start_x, info_text)
-            except curses.error:
-                pass
 
         self._stdscr.refresh()
 
@@ -112,17 +128,17 @@ class CursesRenderer(Renderer):
         try:
             self._stdscr.attron(curses.color_pair(1))
             self._stdscr.attron(curses.A_BOLD)
-            self._stdscr.addstr(start_y - 1, start_x, f"BANK: {bank_name}", curses.A_STANDOUT)
+            self._stdscr.addstr(
+                start_y - 1, start_x, f"BANK: {bank_name}", curses.A_STANDOUT
+            )
             self._stdscr.attroff(curses.A_BOLD)
             self._stdscr.attroff(curses.color_pair(1))
         except curses.error:
             pass
 
         # MIDI port
-        try:
+        with contextlib.suppress(curses.error):
             self._stdscr.addstr(start_y + 10, start_x, f"MIDI Port: {midi_port}")
-        except curses.error:
-            pass
 
         self._stdscr.refresh()
 
@@ -134,7 +150,7 @@ class CursesRenderer(Renderer):
 
         help_lines = [
             "Keys: ↑↓←→:Navigate  v:Value  +/-:Inc/Dec  r:Rename  c:Channel  n:Control#",
-            "      b:Bank  x:Reset  m:MIDI Port  SPACE:Show Values  h:Help  q:Quit"
+            "      b:Bank  x:Reset  m:MIDI Port  SPACE:Show Values  h:Help  q:Quit",
         ]
 
         # Position help at bottom of screen
@@ -143,18 +159,16 @@ class CursesRenderer(Renderer):
         for i, line in enumerate(help_lines):
             # Center the help text
             help_x = max(0, (self._screen_width - len(line)) // 2)
-            try:
+            with contextlib.suppress(curses.error):
                 self._stdscr.addstr(help_y + i, help_x, line, curses.A_DIM)
-            except curses.error:
-                # Ignore if we can't draw (terminal too small)
-                pass
 
         self._stdscr.refresh()
 
     def get_input(self) -> int:
         if not self._stdscr:
             return -1
-        return self._stdscr.getch()
+        result = self._stdscr.getch()
+        return int(result) if result is not None else -1
 
     def prompt_input(self, prompt: str, max_length: int) -> str:
         if not self._stdscr:
@@ -170,7 +184,10 @@ class CursesRenderer(Renderer):
         try:
             self._stdscr.addstr(start_y + 11, start_x, prompt)
             self._stdscr.refresh()
-            input_str = self._stdscr.getstr(start_y + 11, start_x + len(prompt), max_length).decode("utf-8")
+            raw_input = self._stdscr.getstr(
+                start_y + 11, start_x + len(prompt), max_length
+            )
+            input_str = raw_input.decode("utf-8") if raw_input else ""
         except curses.error:
             input_str = ""
         finally:

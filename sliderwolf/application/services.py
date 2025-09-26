@@ -1,22 +1,21 @@
-from typing import Dict, Optional
-from ..domain.models import Bank, Parameter, MIDIMessage, MIDIChannel, AppState
 from ..domain.interfaces import BankRepository, MIDIPort
+from ..domain.models import AppState, Bank, MIDIChannel, MIDIMessage, Parameter
 
 
 class BankService:
     def __init__(self, repository: BankRepository):
         self._repository = repository
 
-    def load_banks(self) -> Dict[str, Bank]:
+    def load_banks(self) -> dict[str, Bank]:
         return self._repository.load_banks()
 
-    def save_banks(self, banks: Dict[str, Bank]) -> None:
+    def save_banks(self, banks: dict[str, Bank]) -> None:
         self._repository.save_banks(banks)
 
     def create_bank(self, name: str) -> Bank:
         return Bank(name=name)
 
-    def get_preferred_midi_port(self) -> Optional[str]:
+    def get_preferred_midi_port(self) -> str | None:
         return self._repository.get_preferred_midi_port()
 
     def set_preferred_midi_port(self, port: str) -> None:
@@ -43,7 +42,7 @@ class MIDIService:
         message = MIDIMessage(
             channel=parameter.channel,
             control_number=parameter.control_number,
-            value=parameter.value
+            value=parameter.value,
         )
         return self._midi_port.send_message(message)
 
@@ -62,7 +61,9 @@ class ParameterService:
         self._bank_service = bank_service
         self._midi_service = midi_service
 
-    def update_parameter_value(self, state: AppState, index: int, new_value: int) -> AppState:
+    def update_parameter_value(
+        self, state: AppState, index: int, new_value: int
+    ) -> AppState:
         current_bank = state.banks[state.current_bank]
         parameter = current_bank.get_parameter(index)
         updated_parameter = parameter.update_value(new_value)
@@ -82,7 +83,7 @@ class ParameterService:
             name=new_name,
             value=parameter.value,
             channel=parameter.channel,
-            control_number=parameter.control_number
+            control_number=parameter.control_number,
         )
         updated_bank = current_bank.update_parameter(index, updated_parameter)
 
@@ -91,14 +92,16 @@ class ParameterService:
 
         return state.with_updates(banks=new_banks)
 
-    def update_parameter_channel(self, state: AppState, index: int, channel: int) -> AppState:
+    def update_parameter_channel(
+        self, state: AppState, index: int, channel: int
+    ) -> AppState:
         current_bank = state.banks[state.current_bank]
         parameter = current_bank.get_parameter(index)
         updated_parameter = Parameter(
             name=parameter.name,
             value=parameter.value,
             channel=MIDIChannel.from_int(channel),
-            control_number=parameter.control_number
+            control_number=parameter.control_number,
         )
         updated_bank = current_bank.update_parameter(index, updated_parameter)
 
@@ -107,14 +110,16 @@ class ParameterService:
 
         return state.with_updates(banks=new_banks)
 
-    def update_parameter_control_number(self, state: AppState, index: int, control_number: int) -> AppState:
+    def update_parameter_control_number(
+        self, state: AppState, index: int, control_number: int
+    ) -> AppState:
         current_bank = state.banks[state.current_bank]
         parameter = current_bank.get_parameter(index)
         updated_parameter = Parameter(
             name=parameter.name,
             value=parameter.value,
             channel=parameter.channel,
-            control_number=control_number
+            control_number=control_number,
         )
         updated_bank = current_bank.update_parameter(index, updated_parameter)
 

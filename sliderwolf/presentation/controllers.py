@@ -1,14 +1,13 @@
 import curses
 import threading
-import time
-from typing import Optional
-from ..domain.models import AppState
+
+from ..application.services import BankService, MIDIService, ParameterService
 from ..domain.interfaces import Renderer
-from ..application.services import ParameterService, BankService, MIDIService
+from ..domain.models import AppState, Bank
 
 
 class InputHandler:
-    def __init__(self):
+    def __init__(self) -> None:
         self.GRID_SIZE = 8
 
     def handle_navigation(self, key: int, state: AppState) -> AppState:
@@ -52,19 +51,21 @@ class InputHandler:
 
 
 class UIController:
-    def __init__(self,
-                 renderer: Renderer,
-                 parameter_service: ParameterService,
-                 bank_service: BankService,
-                 midi_service: MIDIService):
+    def __init__(
+        self,
+        renderer: Renderer,
+        parameter_service: ParameterService,
+        bank_service: BankService,
+        midi_service: MIDIService,
+    ):
         self._renderer = renderer
         self._parameter_service = parameter_service
         self._bank_service = bank_service
         self._midi_service = midi_service
         self._input_handler = InputHandler()
         self._running = True
-        self._pending_save = None
-        self._save_timer = None
+        self._pending_save: dict[str, Bank] | None = None
+        self._save_timer: threading.Timer | None = None
         self._save_lock = threading.Lock()
         self._save_delay = 1.0  # seconds
 
@@ -105,9 +106,13 @@ class UIController:
         current_bank = state.banks[state.current_bank]
         midi_port = self._midi_service.get_connected_port_name()
 
-        self._renderer.render_grid(current_bank, state.cursor_x, state.cursor_y,
-                                   show_all_values=state.show_all_values,
-                                   show_cursor_value=state.show_cursor_value)
+        self._renderer.render_grid(
+            current_bank,
+            state.cursor_x,
+            state.cursor_y,
+            show_all_values=state.show_all_values,
+            show_cursor_value=state.show_cursor_value,
+        )
         self._renderer.render_status(state.current_bank, midi_port)
         self._renderer.render_help(state.show_help)
 
@@ -166,7 +171,9 @@ class UIController:
         if not new_value_str:
             return state
 
-        new_value = self._input_handler.validate_midi_value(new_value_str, current_param.value)
+        new_value = self._input_handler.validate_midi_value(
+            new_value_str, current_param.value
+        )
         return self._parameter_service.update_parameter_value(state, index, new_value)
 
     def _handle_value_increment(self, state: AppState, index: int) -> AppState:
@@ -200,8 +207,12 @@ class UIController:
         if not new_control_str:
             return state
 
-        new_control = self._input_handler.validate_midi_value(new_control_str, current_param.control_number)
-        return self._parameter_service.update_parameter_control_number(state, index, new_control)
+        new_control = self._input_handler.validate_midi_value(
+            new_control_str, current_param.control_number
+        )
+        return self._parameter_service.update_parameter_control_number(
+            state, index, new_control
+        )
 
     def _handle_channel_change(self, state: AppState, index: int) -> AppState:
         current_bank = state.banks[state.current_bank]
@@ -211,8 +222,12 @@ class UIController:
         if not new_channel_str:
             return state
 
-        new_channel = self._input_handler.validate_channel(new_channel_str, current_param.channel.value)
-        return self._parameter_service.update_parameter_channel(state, index, new_channel)
+        new_channel = self._input_handler.validate_channel(
+            new_channel_str, current_param.channel.value
+        )
+        return self._parameter_service.update_parameter_channel(
+            state, index, new_channel
+        )
 
     def _handle_bank_switch(self, state: AppState) -> AppState:
         new_bank_name = self._renderer.prompt_input("Bank name: ", 3)
@@ -231,7 +246,9 @@ class UIController:
 
     def _handle_bank_reset(self, state: AppState) -> AppState:
         new_banks = state.banks.copy()
-        new_banks[state.current_bank] = self._bank_service.create_bank(state.current_bank)
+        new_banks[state.current_bank] = self._bank_service.create_bank(
+            state.current_bank
+        )
 
         return state.with_updates(banks=new_banks)
 
@@ -254,7 +271,7 @@ class UIController:
         if confirm.lower() == "y":
             self._running = False
 
-    def _schedule_save(self, banks) -> None:
+    def _schedule_save(self, banks: dict[str, Bank]) -> None:
         """Schedule a debounced save operation"""
         with self._save_lock:
             self._pending_save = banks

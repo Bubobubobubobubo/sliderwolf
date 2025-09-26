@@ -1,7 +1,7 @@
-from dataclasses import dataclass, field
-from typing import Dict, List
-from enum import Enum
 import time
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
 
 
 class MIDIChannel(int, Enum):
@@ -34,7 +34,7 @@ class Parameter:
     channel: MIDIChannel = MIDIChannel.CH_1
     control_number: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.value = max(0, min(127, self.value))
         self.control_number = max(0, min(127, self.control_number))
         if len(self.name) > 3:
@@ -45,16 +45,16 @@ class Parameter:
             name=self.name,
             value=max(0, min(127, new_value)),
             channel=self.channel,
-            control_number=self.control_number
+            control_number=self.control_number,
         )
 
 
 @dataclass
 class Bank:
     name: str
-    parameters: List[Parameter] = field(default_factory=list)
+    parameters: list[Parameter] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.name) > 3:
             self.name = self.name[:3]
 
@@ -81,7 +81,7 @@ class MIDIMessage:
     control_number: int
     value: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.control_number = max(0, min(127, self.control_number))
         self.value = max(0, min(127, self.value))
 
@@ -89,17 +89,19 @@ class MIDIMessage:
 @dataclass
 class AppState:
     current_bank: str = "XXX"
-    banks: Dict[str, Bank] = field(default_factory=dict)
+    banks: dict[str, Bank] = field(default_factory=dict)
     cursor_x: int = 0
     cursor_y: int = 0
     preferred_midi_port: str = ""
     show_help: bool = True
     last_flip_time: float = field(default_factory=time.time)
-    show_cursor_value: bool = False  # Whether cursor position shows value (flips every 2s)
-    show_all_values: bool = False    # Whether all positions show values (key press)
-    flip_interval: float = 1.0       # seconds
+    show_cursor_value: bool = (
+        False  # Whether cursor position shows value (flips every 2s)
+    )
+    show_all_values: bool = False  # Whether all positions show values (key press)
+    flip_interval: float = 1.0  # seconds
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.banks:
             default_bank = Bank(name=self.current_bank)
             self.banks[self.current_bank] = default_bank
@@ -120,20 +122,22 @@ class AppState:
             last_flip_time=time.time(),
             show_cursor_value=not self.show_cursor_value,
             show_all_values=self.show_all_values,
-            flip_interval=self.flip_interval
+            flip_interval=self.flip_interval,
         )
 
-    def with_updates(self, **kwargs) -> "AppState":
+    def with_updates(self, **kwargs: Any) -> "AppState":
         """Create new state with specific field updates, preserving timing fields"""
         return AppState(
-            current_bank=kwargs.get('current_bank', self.current_bank),
-            banks=kwargs.get('banks', self.banks),
-            cursor_x=kwargs.get('cursor_x', self.cursor_x),
-            cursor_y=kwargs.get('cursor_y', self.cursor_y),
-            preferred_midi_port=kwargs.get('preferred_midi_port', self.preferred_midi_port),
-            show_help=kwargs.get('show_help', self.show_help),
-            last_flip_time=kwargs.get('last_flip_time', self.last_flip_time),
-            show_cursor_value=kwargs.get('show_cursor_value', self.show_cursor_value),
-            show_all_values=kwargs.get('show_all_values', self.show_all_values),
-            flip_interval=kwargs.get('flip_interval', self.flip_interval)
+            current_bank=kwargs.get("current_bank", self.current_bank),
+            banks=kwargs.get("banks", self.banks),
+            cursor_x=kwargs.get("cursor_x", self.cursor_x),
+            cursor_y=kwargs.get("cursor_y", self.cursor_y),
+            preferred_midi_port=kwargs.get(
+                "preferred_midi_port", self.preferred_midi_port
+            ),
+            show_help=kwargs.get("show_help", self.show_help),
+            last_flip_time=kwargs.get("last_flip_time", self.last_flip_time),
+            show_cursor_value=kwargs.get("show_cursor_value", self.show_cursor_value),
+            show_all_values=kwargs.get("show_all_values", self.show_all_values),
+            flip_interval=kwargs.get("flip_interval", self.flip_interval),
         )

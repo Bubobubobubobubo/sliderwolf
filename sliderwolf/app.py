@@ -1,14 +1,15 @@
-import sys
-from .domain.models import AppState
+import contextlib
+
 from .application.services import BankService, MIDIService, ParameterService
-from .infrastructure.storage import FileBankRepository
+from .domain.models import AppState
 from .infrastructure.midi import RTMIDIPort
+from .infrastructure.storage import FileBankRepository
 from .infrastructure.ui import CursesRenderer
 from .presentation.controllers import UIController
 
 
 class SliderWolfApp:
-    def __init__(self):
+    def __init__(self) -> None:
         # Infrastructure
         self._bank_repository = FileBankRepository()
         self._midi_port = RTMIDIPort()
@@ -17,14 +18,16 @@ class SliderWolfApp:
         # Services
         self._bank_service = BankService(self._bank_repository)
         self._midi_service = MIDIService(self._midi_port)
-        self._parameter_service = ParameterService(self._bank_service, self._midi_service)
+        self._parameter_service = ParameterService(
+            self._bank_service, self._midi_service
+        )
 
         # Controller
         self._ui_controller = UIController(
             self._renderer,
             self._parameter_service,
             self._bank_service,
-            self._midi_service
+            self._midi_service,
         )
 
     def run(self) -> None:
@@ -65,7 +68,7 @@ class SliderWolfApp:
             show_help=True,
             show_cursor_value=False,
             show_all_values=False,
-            flip_interval=2.0
+            flip_interval=2.0,
         )
 
     def _setup_midi_connection(self, state: AppState) -> None:
@@ -74,20 +77,22 @@ class SliderWolfApp:
             if self._midi_service.connect_to_port(state.preferred_midi_port):
                 return
             else:
-                print(f"Warning: Could not connect to preferred MIDI port '{state.preferred_midi_port}'. Trying other ports...")
+                print(
+                    f"Warning: Could not connect to preferred MIDI port '{state.preferred_midi_port}'. Trying other ports..."
+                )
 
         # Try first available port
         if not self._midi_service.connect_to_first_available():
-            print("Warning: Could not connect to any MIDI port. MIDI functionality will be disabled.")
+            print(
+                "Warning: Could not connect to any MIDI port. MIDI functionality will be disabled."
+            )
 
     def _cleanup(self) -> None:
-        try:
+        with contextlib.suppress(Exception):
             self._midi_service.disconnect()
-        except:
-            pass
 
 
-def main():
+def main() -> None:
     app = SliderWolfApp()
     app.run()
 
