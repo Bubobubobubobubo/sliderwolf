@@ -1,11 +1,20 @@
 from .utils import clamp
 from .midi import MIDI
-from typing import Any
+from typing import Any, Dict, List
 from .bank import Bank
 import curses
 import sys
 
 __all__ = ("Application",)
+
+# Constants
+GRID_SIZE = 8
+MAX_PARAMS = 64
+MIDI_VALUE_MIN = 0
+MIDI_VALUE_MAX = 127
+MIDI_CHANNEL_MIN = 0
+MIDI_CHANNEL_MAX = 15
+PARAM_NAME_MAX_LENGTH = 3
 
 
 class Application:
@@ -52,25 +61,43 @@ class Application:
         if preferred_midi_port:
             try:
                 self.midi_interface.connect_by_name(preferred_midi_port)
-            except Exception as e:
-                print(
-                    f"Failed to connect to the preferred MIDI port: {preferred_midi_port}"
-                )
-                print(str(e))
+            except ConnectionError as e:
+                print(f"Warning: {str(e)}. Trying other available ports...")
         # If there is no preferred MIDI port, connect to the first available port
         else:
-            ports = self.midi_interface.get_available_ports()
-            if ports:
-                try:
-                    self.midi_interface.connect_by_name(ports[0])
-                except Exception as e:
-                    print(
-                        f"Failed to connect to the first available MIDI port: {ports[0]}"
-                    )
-                    print(str(e))
-            else:
-                print("No MIDI ports available")
-                sys.exit(1)
+            if not self.midi_interface.connect_first_available():
+                print("Warning: Could not connect to any MIDI port. MIDI functionality will be disabled.")
+
+    def _cleanup(self) -> None:
+        """Clean up resources before exiting"""
+        if hasattr(self, 'midi_interface') and self.midi_interface:
+            self.midi_interface.close()
+        if hasattr(self, 'bank_manager') and self.bank_manager:
+            self.bank_manager.save_banks()
+
+    def _validate_midi_value(self, value_str: str, default: int = 0) -> int:
+        """Validate and clamp MIDI values (0-127)"""
+        try:
+            value = int(value_str.strip())
+            return clamp(value, MIDI_VALUE_MIN, MIDI_VALUE_MAX)
+        except (ValueError, TypeError):
+            return default
+
+    def _validate_channel(self, value_str: str, default: int = 0) -> int:
+        """Validate and clamp MIDI channel values (0-15)"""
+        try:
+            value = int(value_str.strip())
+            return clamp(value, MIDI_CHANNEL_MIN, MIDI_CHANNEL_MAX)
+        except (ValueError, TypeError):
+            return default
+
+    def _validate_param_name(self, name_str: str) -> str:
+        """Validate parameter name (3 chars, alphanumeric)"""
+        if isinstance(name_str, str):
+            cleaned = name_str.strip().upper()[:PARAM_NAME_MAX_LENGTH]
+            if cleaned.isalnum() and len(cleaned) > 0:
+                return cleaned
+        return ""
 
     def screen_setup(self, stdscr: Any) -> None:
         """
@@ -80,13 +107,73 @@ class Application:
             stdscr: The curses standard screen object.
         """
         curses.curs_set(2)
-        # stdscr.nodelay(0)
         stdscr.timeout(-1)
         curses.start_color()
         curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLUE)
         self.screen_height, self.screen_width = stdscr.getmaxyx()
         self.cursor_x = self.screen_width // 2 - 16
         self.cursor_y = self.screen_height // 2 - 4
+
+    def _draw_interface(self, stdscr: Any) -> None:
+        """Draw the main interface elements"""
+        stdscr.erase()
+        curses.curs_set(1)
+        self.draw_box(stdscr)
+
+        start_y = max((self.screen_height - GRID_SIZE) // 2, 1)
+        start_x = max((self.screen_width - (GRID_SIZE * 4)) // 2, 1)
+
+        # Show MIDI port info
+        midi_port = self.midi_interface.get_connected_port_name()
+        stdscr.addstr(start_y + 10, start_x, f"MIDI Port: {midi_port}")
+
+        # Show current bank
+        stdscr.attron(curses.color_pair(1))
+        stdscr.attron(curses.A_BOLD)
+        stdscr.addstr(start_y - 1, start_x, f"BANK: {self.current_bank}", curses.A_STANDOUT)
+        stdscr.attroff(curses.A_BOLD)
+        stdscr.attroff(curses.color_pair(1))
+
+        self._draw_grid(stdscr, start_y, start_x)
+        self._draw_cursor(stdscr, start_y, start_x)
+
+    def _draw_grid(self, stdscr: Any, start_y: int, start_x: int) -> None:
+        """Draw the parameter grid"""
+        params = self.banks[self.current_bank]["params"]
+
+        for y in range(GRID_SIZE):
+            for x in range(GRID_SIZE):
+                index = y * GRID_SIZE + x
+                if index < len(params):
+                    param = params[index]
+                    stdscr.addstr(start_y + y, start_x + x * 4, param)
+
+    def _draw_cursor(self, stdscr: Any, start_y: int, start_x: int) -> None:
+        """Draw the cursor and parameter info"""
+        params = self.banks[self.current_bank]["params"]
+        param_values = self.banks[self.current_bank]["values"]
+
+        cursor_index = self.cursor_y * GRID_SIZE + self.cursor_x
+        cursor_param = None
+        if 0 <= cursor_index < len(params) and cursor_index < MAX_PARAMS:
+            cursor_param = params[cursor_index]
+
+        if cursor_param is not None:
+            cursor_value = f"{param_values.get(cursor_param, 0): >3}"
+            stdscr.addstr(
+                start_y + self.cursor_y,
+                start_x + self.cursor_x * 4,
+                cursor_value,
+                curses.A_REVERSE,
+            )
+
+            cursor_channel = self.banks[self.current_bank]["channels"].get(cursor_param, 0)
+            cursor_control_number = self.banks[self.current_bank]["control_numbers"].get(cursor_param, 0)
+            stdscr.addstr(
+                start_y + 9,
+                start_x,
+                f"Channel: {cursor_channel} Control Number: {cursor_control_number}",
+            )
 
     def draw_box(self, stdscr: Any) -> None:
         """
@@ -178,77 +265,22 @@ class Application:
         curses.use_default_colors()
 
         while True:
-            stdscr.erase()
+            self._draw_interface(stdscr)
 
-            curses.curs_set(1)
-            # Draw a box around the application area
-            self.draw_box(stdscr)
+            # Get current parameter info for input handling
+            start_y = max((self.screen_height - GRID_SIZE) // 2, 1)
+            start_x = max((self.screen_width - (GRID_SIZE * 4)) // 2, 1)
 
-            # Calculate the starting coordinates for drawing the grid
-            start_y = max((self.screen_height - 8) // 2, 1)
-            start_x = max((self.screen_width - 32) // 2, 1)
-
-            midi_port = self.midi_interface.get_connected_port_name()
-            stdscr.addstr(
-                start_y + 10,
-                start_x,
-                f"MIDI Port: {midi_port}",
-            )
-
-            # Show current bank
-            stdscr.attron(curses.color_pair(1))
-            stdscr.attron(curses.A_BOLD)
-            stdscr.addstr(start_y - 1, start_x, f"BANK: {self.current_bank}", curses.A_STANDOUT)
-            stdscr.attroff(curses.A_BOLD)
-            stdscr.attroff(curses.color_pair(1))
-
-            # Draw the 8x8 grid
             params = self.banks[self.current_bank]["params"]
             param_values = self.banks[self.current_bank]["values"]
-
-            for y in range(8):
-                for x in range(8):
-                    index = y * 8 + x
-                    param = params[index]
-                    stdscr.addstr(start_y + y, start_x + x * 4, param)
-
-            # Draw the cursor
-            cursor_index = self.cursor_y * 8 + self.cursor_x
+            cursor_index = self.cursor_y * GRID_SIZE + self.cursor_x
             cursor_param = None
-            if cursor_index < len(params):
+            if 0 <= cursor_index < len(params) and cursor_index < MAX_PARAMS:
                 cursor_param = params[cursor_index]
+
             if cursor_param is not None:
-                cursor_value = f"{param_values.get(cursor_param, 0): >3}"
-                stdscr.addstr(
-                    start_y + self.cursor_y,
-                    start_x + self.cursor_x * 4,
-                    cursor_value,
-                    curses.A_REVERSE,
-                )
-
                 cursor_channel = self.banks[self.current_bank]["channels"].get(cursor_param, 0)
-                cursor_control_number = self.banks[self.current_bank][
-                    "control_numbers"
-                ].get(cursor_param, 0)
-                stdscr.addstr(
-                    start_y + 9,
-                    start_x,
-                    f"Channel: {cursor_channel} Control Number: {cursor_control_number}",
-                )
-
-                try:
-                    midi_port = self.bank_manager.bank["preferred_midi_port"]
-                except KeyError:
-                    pass  # TODO: FIX ME
-                cursor_channel = self.banks[self.current_bank]["channels"].get(cursor_param, 0)
-                cursor_control_number = self.banks[self.current_bank][
-                    "control_numbers"
-                ].get(cursor_param, 0)
-                stdscr.addstr(
-                    start_y + 9,
-                    start_x,
-                    f"Channel: {cursor_channel} Control Number: {cursor_control_number}",
-                )
+                cursor_control_number = self.banks[self.current_bank]["control_numbers"].get(cursor_param, 0)
 
             # Capture user input
             key = stdscr.getch()
@@ -256,31 +288,28 @@ class Application:
             # Update cursor position based on arrow keys
             if key == curses.KEY_UP and self.cursor_y > 0:
                 self.cursor_y -= 1
-            elif key == curses.KEY_DOWN and self.cursor_y < 7:
+            elif key == curses.KEY_DOWN and self.cursor_y < GRID_SIZE - 1:
                 self.cursor_y += 1
             elif key == curses.KEY_LEFT and self.cursor_x > 0:
                 self.cursor_x -= 1
-            elif key == curses.KEY_RIGHT and self.cursor_x < 7:
+            elif key == curses.KEY_RIGHT and self.cursor_x < GRID_SIZE - 1:
                 self.cursor_x += 1
             elif key == ord("v"):  # Change value
                 curses.curs_set(0)
                 stdscr.addstr(
                     start_y + self.cursor_y, start_x + self.cursor_x * 4, "   "
                 )
-                try:
-                    new_value = self.get_param_value(
-                        stdscr,
-                        start_y + self.cursor_y,
-                        start_x + self.cursor_x * 4,
-                        param_values.get(cursor_param, 0),
-                    )[:3]
-                    new_value = clamp(int(new_value), 0, 127)
-                    param_values[cursor_param] = new_value
-                    self.on_parameter_change(
-                        cursor_param, cursor_channel, cursor_control_number, new_value
-                    )
-                except ValueError:
-                    pass
+                new_value_str = self.get_param_value(
+                    stdscr,
+                    start_y + self.cursor_y,
+                    start_x + self.cursor_x * 4,
+                    str(param_values.get(cursor_param, 0)),
+                )[:3]
+                new_value = self._validate_midi_value(new_value_str, param_values.get(cursor_param, 0))
+                param_values[cursor_param] = new_value
+                self.on_parameter_change(
+                    cursor_param, cursor_channel, cursor_control_number, new_value
+                )
                 curses.curs_set(2)
             elif key == ord("+") or key == ord("="):  # Increment value
                 curses.curs_set(0)
@@ -308,13 +337,14 @@ class Application:
                 curses.curs_set(2)
             elif key == ord("r"):  # Rename parameter
                 curses.curs_set(0)
-                new_name = self.get_param_value(
+                new_name_str = self.get_param_value(
                     stdscr,
                     start_y + self.cursor_y,
                     start_x + self.cursor_x * 4,
                     cursor_param,
-                )[:3].upper()
-                if len(new_name) > 0 and new_name.isalnum():
+                )[:3]
+                new_name = self._validate_param_name(new_name_str)
+                if new_name:
                     old_index = params.index(cursor_param)
                     params[old_index] = new_name
                     if cursor_param in param_values:
@@ -332,26 +362,23 @@ class Application:
                 curses.curs_set(2)
             elif key == ord("n"):  # Enter control number
                 curses.curs_set(0)
-                new_control_number = self.get_param_value(
+                new_control_str = self.get_param_value(
                     stdscr, start_y + 9, start_x + 27, str(cursor_control_number)
                 )
-                new_control_number = clamp(int(new_control_number), 0, 127)
+                new_control_number = self._validate_midi_value(new_control_str, cursor_control_number)
                 self.banks[self.current_bank]["control_numbers"][
                     cursor_param
                 ] = new_control_number
                 curses.curs_set(2)
             elif key == ord("c"):  # Enter channel
                 curses.curs_set(0)
-                new_channel = self.get_param_value(
+                new_channel_str = self.get_param_value(
                     stdscr, start_y + 9, start_x + 9, str(cursor_channel)
                 )
-                try:
-                    new_channel = clamp(int(new_channel), 0, 15)
-                    self.banks[self.current_bank]["channels"][
-                        cursor_param
-                    ] = new_channel
-                except ValueError:
-                    pass
+                new_channel = self._validate_channel(new_channel_str, cursor_channel)
+                self.banks[self.current_bank]["channels"][
+                    cursor_param
+                ] = new_channel
                 curses.curs_set(2)
             elif key == ord("m"):  # Enter MIDI port
                 curses.curs_set(0)
@@ -364,40 +391,45 @@ class Application:
                     stdscr,
                     start_y + 10,
                     start_x + 12,
-                    str(cursor_channel),
+                    "",
                     midi_param=True,
                 )
-                self.midi_interface.connect_by_user_input(new_midi_port)
-                self.bank_manager.preferred_midi_port = new_midi_port # <-- Add this line to update the preferred MIDI port
-                self.bank_manager.save_banks()
+                if new_midi_port.strip() and self.midi_interface.connect_by_user_input(new_midi_port):
+                    self.bank_manager.preferred_midi_port = new_midi_port
+                    self.bank_manager.save_banks()
+                else:
+                    stdscr.addstr(start_y + 11, start_x, "Failed to connect to MIDI port")
+                    stdscr.getch()  # Wait for user acknowledgment
                 curses.curs_set(2)
             elif key == ord("q"):  # Quit
                 stdscr.addstr(start_y + 11, start_x, "Do you want to quit? (y/n): ")
                 if stdscr.getch() == ord("y"):
+                    self._cleanup()
                     exit()
             elif key == ord("b"):  # Switch bank
                 # Get the new bank name from the user
                 curses.curs_set(0)
                 stdscr.addstr(start_y - 1, start_x + 5, " " * 10)
-                new_bank_name = self.get_param_value(
+                new_bank_name_str = self.get_param_value(
                     stdscr, start_y - 1, start_x + 6, ""
-                ).upper()
-                if new_bank_name.isalpha():
+                )
+                new_bank_name = self._validate_param_name(new_bank_name_str)
+                if new_bank_name:
                     if new_bank_name not in self.banks:
                         # Initialize a new bank if it doesn't exist
                         self.banks[new_bank_name] = {
-                            "params": [f"P{index:02}" for index in range(64)],
+                            "params": [f"P{index:02}" for index in range(MAX_PARAMS)],
                             "values": {
                                 param: 0
-                                for param in [f"P{index:02}" for index in range(64)]
+                                for param in [f"P{index:02}" for index in range(MAX_PARAMS)]
                             },
                             "channels": {
                                 param: 0
-                                for param in [f"P{index:02}" for index in range(64)]
+                                for param in [f"P{index:02}" for index in range(MAX_PARAMS)]
                             },
                             "control_numbers": {
                                 param: 0
-                                for param in [f"P{index:02}" for index in range(64)]
+                                for param in [f"P{index:02}" for index in range(MAX_PARAMS)]
                             },
                         }
                     self.current_bank = new_bank_name
